@@ -1,0 +1,97 @@
+---
+title: "Análisis de Factores de Pronóstico de Cáncer de Mama"
+author: "Mario Pascual González"
+start_date: 21/02/2024
+output:
+  html_document:
+    df_print: paged
+dataset: datosm_icb.txt
+---
+
+
+```{r setup}
+# Vamos a centrar todas las figuras y a dejarlas a un tamaño más cómodo
+knitr::opts_chunk$set(fig.align='center', fig.width=6, fig.height=4, out.width='70%')
+```
+
+## Preprocesamiento
+Primero debemos cargar los datos en formato `.txt`. Podemos también generar una serie de estadísticas básicas sobre el conjunto y algunas distribuciones básicas con `plot`. 
+```{r}
+ruta <- "C://Users//Mario//Documents//RProjects//Factores pronóstico cáncer de mama - UGCIOM//datosm_icb.txt"
+datos <- read.table(ruta, header = TRUE, sep = " ", 
+                    dec = ".", na.strings = "NA", 
+                    stringsAsFactors = TRUE)
+```
+
+Comenzamos con algunos comandos básicos. 
+
+```{r}
+head(datos) # Podemos visualizar las primeras lineas del conjunto
+
+class(datos) # Podemos obtener el dtype del objeto que pasemos como parámetro
+
+str(datos) # Da la descripción de la estructura de datos
+
+summary(datos) # Esta función nos da el resumen estadístico básicos de los datos
+
+plot(x = datos$edad, 
+     y = datos$tam,
+     xlab = "Edad", ylab = "Tamaño", 
+     main = "Edad frente a tamaño",
+     col = "blue") # Podemos mostrar la distribución discreta de dos variables con plot
+```
+
+El tipo de datos que R utiliza para representar las variables categóricas se denomina `factor`. Debido a que la mayoría de datos nos van a llegar en formato string cuando sean categóricos una de las primeras cosas que debemos hacer es pasarlas a factor. Esto podemos hacerlo con la opción `stringsAsFactors = TRUE`. 
+
+### Análisis Univariable en R
+
+#### Variables categóricas
+
+Podemos obtener las columnas categóricas de los datos en un vector `c()` utilizando la función `sapply()`, la cual es la equivalente a las listas comprimidas de Python `[x for x in ...]`.   
+
+```{r}
+var_categoricas <- colnames(datos)[sapply(datos, function(columna) {
+  class(columna) == "factor"
+})]
+var_categoricas
+```
+Sin embargo, como se puede ver, en Python para poder operar sobre las columnas de un dataframe utilizando una lista comprimida habría que seleccionar `datos.columns`, sin embargo, `sapply` ya accede directamente a la unidad más lógica sobre la que se puede operar -para un `data.frame`, las columnas. 
+
+Podemos contar los valores únicos de cada variable categórica:
+
+```{r}
+distro_grado <- table(datos$grado)
+barplot(height = distro_grado, 
+        xlab = "Valores de grado", ylab = "Frecuencia absoluta",
+        main = "Frecuencias absolutas para valores únicos de grado", col = "red")
+```
+Una de las principales gráficas que debemos usar para la representación de variables categóricas es `barplot()`. Una gráfica alternativa sería `pieplot()`, pero no es recomendable usarla ya que está en dos dimensiones, teniendo que calcular el área de cada "quesito" para saber el porcentaje de cada valor sobre el total. 
+
+#### Variables numéricas
+
+Podemos calcular variables de tendencia central...
+
+```{r}
+media_edad <- mean(datos$edad, na.rm = TRUE)
+mediana_edad <- median(datos$edad, na.rm = TRUE)
+sd_edad <- sd(datos$edad, na.rm = TRUE)
+print(paste("Media edad: ", media_edad, 
+            " Mediana edad: ", mediana_edad, 
+            " Desviación estándar: ", sd_edad))
+# na.rm = TRUE para ignorar los valores faltantes. 
+```
+
+Algunas representaciones útiles...
+
+```{r}
+hist(x = datos$edad, 
+     main = "Histograma de la edad", ylab = "Frecuencia", xlab = "Edad", col = "blue")
+boxplot(datos$edad, main = "Gráfico de cajas de edad") # Muestra el máximo, mínimo, Q1, Q3, y mediana. 
+```
+
+Podemos también aplicar una estratificación de variables numéricas para dividir nuestros datos en intervalos. La estratificación es útil en problemas clínicos ya que se quieren sacar conclusiones sobre conjuntos de pacientes, por ejemplo, tiene más importancia considerar la información de lso pacientes de 50 a 60 años que la de 55 contra 56. 
+
+```{r}
+datos$edad_cat <- cut(datos$edad, breaks = c(0, 40, 60, max(datos$edad, na.rm = TRUE)))
+head(datos, 10)
+```
