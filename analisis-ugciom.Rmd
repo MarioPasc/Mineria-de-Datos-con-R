@@ -207,8 +207,17 @@ kruskal.test(tam ~ grado, data = datos)
 
 Si sigue una distribución normal se utiliza el **coeficiente de correlación de Pearson**. 
 
-Si no sigue una distribución normal se utiliza el **coeficiente de correlación de Spearman**. 
+Si no sigue una distribución normal se utiliza el **coeficiente de correlación de Spearman**. aaa
 
+
+```{r}
+source("~/Proyectos R/Mineria-de-Datos-con-R/calculaPValor.R")
+
+calculaPValor(datos, "recid" ,"feno", "recid")
+
+
+
+```
 
 
 
