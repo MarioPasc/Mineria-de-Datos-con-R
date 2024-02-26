@@ -168,7 +168,8 @@ El intervale de confianza es el rango posible de valores en los que puede estar 
 
 ```{r}
 
-t.test(tam ~recid, data = datos)
+tt <- t.test(tam ~recid, data = datos)
+tt$p.value
 
 ```
 
@@ -176,7 +177,8 @@ Puede haber ocasiones en las que las distribuciones no son normales, entonces el
 
 ```{r}
 
-wilcox.test(tam ~ recid, data = datos)
+ww <- wilcox.test(tam ~ recid, data = datos)
+ww$p.value
 
 ```
 
@@ -192,15 +194,23 @@ Si hay más de dos grupos entonces se utiliza el análisis de la varianza. Es un
 
 ```{r}
 
-summary(aov(tam ~ grado, data = datos))
+resultado_aov <- aov(tam ~ grado, data = datos)
 
+# Obtener el resumen
+resumen_aov <- summary(resultado_aov)
+
+# El valor Pr(>F) generalmente se encuentra en la primera tabla del resumen para tu factor de interés
+# Acceder al valor p para el factor 'grado'
+valor_p <- resumen_aov[[1]][["Pr(>F)"]][1]
+valor_p
 ```
 
 Si tenemos más de dos categorías y no sigue una distribución normal, entonces hay que realizar un test no paramétrico de más de dos etiquetas llamado test de Kruskal-Wallis. 
 
 ```{r}
 
-kruskal.test(tam ~ grado, data = datos)
+kk <- kruskal.test(tam ~ grado, data = datos)
+kk$p.value
 
 ```
 #### Numérica con numérica
@@ -213,9 +223,19 @@ Si no sigue una distribución normal se utiliza el **coeficiente de correlación
 ```{r}
 source("~/Proyectos R/Mineria-de-Datos-con-R/calculaPValor.R")
 
-calculaPValor(datos, "recid" ,"feno", "recid")
+resultados <- aplicaCalculaPValorATodosLosPares(datos)
 
+library(ggplot2)
+library(reshape2)
 
+ggplot(resultados, aes(x = VariableX, y = VariableY, fill = Valor)) +
+  geom_tile(color = "white") +
+  geom_text(aes(label = sprintf("%.2g", Valor)), size = 3, color = "black") +
+  scale_fill_gradient(low = "white", high = "red", limits = c(0, 1), name = "P-valor") +
+  labs(title = "Heatmap de P-valores", x = "Variable X", y = "Variable Y") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text.y = element_text(angle = 45, hjust = 1))
 
 ```
 
