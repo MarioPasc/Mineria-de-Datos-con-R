@@ -15,9 +15,11 @@ knitr::opts_chunk$set(fig.align='center', fig.width=6, fig.height=4, out.width='
 ```
 
 ## Preprocesamiento
+### Análisis Univariante
+
 Primero debemos cargar los datos en formato `.txt`. Podemos también generar una serie de estadísticas básicas sobre el conjunto y algunas distribuciones básicas con `plot`. 
 ```{r}
-ruta <- "C://Users//Mario//Documents//RProjects//Factores pronóstico cáncer de mama - UGCIOM//datosm_icb.txt"
+ruta <- "~/Proyectos R/Mineria-de-Datos-con-R/datosm_icb.txt"
 datos <- read.table(ruta, header = TRUE, sep = " ", 
                     dec = ".", na.strings = "NA", 
                     stringsAsFactors = TRUE)
@@ -95,3 +97,121 @@ Podemos también aplicar una estratificación de variables numéricas para divid
 datos$edad_cat <- cut(datos$edad, breaks = c(0, 40, 60, max(datos$edad, na.rm = TRUE)))
 head(datos, 10)
 ```
+### Análisis Bivariante
+
+
+En el análisis bivariante se estudian las relaciones de pares de variables, tomando como referencia la variable dependiente (objetivo). 
+
+#### Categórica con categórica
+
+Podemos analizar la relación entre dos variables, por ejemplo, grado y recid, haciendo una **tabla de contingencia**. 
+```{r}
+conting_grado <- table(datos$recid, datos$grado)
+#Hacemos una representación gráfica
+
+barplot(conting_grado, 
+        cex.names = .75, las = 2)
+```
+Podemos además inferir las relaciones cuantitativamente utilizando la *prueba del chi-cuadrado* o el *t-test*. 
+
+> El chi cuadrado permite dar una confianza estadística para afirmar que existe una asociación entre dos variables estadísticas. Comprueba si la distirbución teórica esperable es igual que la distribución experimental observable. Esto prueba si existe asociación entre dos variables partiendo de que los datos son aleatorios, comprobando si la diferenica que se observa entre dos variables es resultado de escoger las muestras aleatoriamente o si efectivamente hay un efecto (cuando el grado es mayor, la probabilidad de recidiba es mayor). El chi-cuadrado se utiliza al **comparar dos variables categóricas**. 
+  
+```{r}
+quim.gr.tab <- xtabs(~ recid + grado, data = datos)
+quim.gr.tab # Crea lo mismo que table pero con un tipo específico para aplicar
+            # chi cuadrado
+
+res <- chisq.test(quim.gr.tab)
+res
+```
+Si el *p-value* es menor que 0.05, entonces podemos **rechazar la hipótesis nula y aceptar la hipótesis alternativa**. Esto no nos dice si hay relación o no, ya que hay que definir la hipótesis nula, en el chi cuadrado la hipótesis nula es que las dos variables son independientes. 
+
+```{r}
+var_categoricas <- colnames(datos)[sapply(datos, function(columna) {
+  class(columna) == "factor"
+})]
+var_categoricas <- var_categoricas[!var_categoricas %in% c("recid", "edad_cat")]
+
+rechazar <- var_categoricas[
+  sapply(var_categoricas, function(variable) {
+    tabla_contingencia <- table(datos[[variable]], datos$recid)
+    chi <- chisq.test(tabla_contingencia)
+    chi$p.value < 0.05
+})]
+rechazar
+```
+
+Cuando hay demasiadas categorías de una de las variables las aproximaciones de los tests estadísticos pueden fallar o no ser fiables, es por esto que R muestra un warning. En este caso se deberían de agrupar categorías para tener menos tipos, esto se debe hacer hablando con el cliente. Cuando alguna de las celdas teine un valor por debajo de cinco entonces sale esta advertencia. 
+
+En este caso se debe realizar un test de Fisher. Podemos saber qué variable ha sido la que ha dado el error viendo sobre las variables que hemos aplicado si alguna tiene un valor por debajo de 5. 
+
+```{r}
+
+fallo.chi <- var_categoricas[sapply(var_categoricas, function(var) {
+  tabla_contingencia <- table(datos[[var]], datos$recid)
+  any(tabla_contingencia < 5)
+})]
+fallo.chi
+```
+
+#### Categórica con Numérica
+
+Ahora podemos continuar con análisis bivariante para variables numéricas. Para poder observar la distribución podemos utilizar un boxplot tal que:
+
+```{r}
+boxplot(datos$tam ~ datos$grado)
+```
+
+Para poder ver si dos variables cuantitativas son independientes se utiliza el **t-test**, ya que demuestra si las medias en las distribuciones son iguales o no. La hipótesis nula dice que las medias son iguales.  
+
+El intervale de confianza es el rango posible de valores en los que puede estar el valor de la media que se ha calculado. El test estadístico **t-test** calcula este rango de confianza en función de la distribución normal. Cuanto mayor sea el tamaño de la muestra más pequeño será el intervalo de confianza ya que más acertado será el valor de la media con respecto a la media real (poblacional). 
+
+```{r}
+
+t.test(tam ~recid, data = datos)
+
+```
+
+Puede haber ocasiones en las que las distribuciones no son normales, entonces el **t-test** no sirve. Cuando las distribuciones no son normales entonces el test no es paramétrico, entonces se usan tests no paramétricos, es decir, que no se puede asumir nada de los parámetros de la distribución. La alternativa entonces es el test de Wilcoxon. 
+
+```{r}
+
+wilcox.test(tam ~ recid, data = datos)
+
+```
+
+Podemos saber entonces si una **distribución de datos numéricos sigue o no una distribución normal**, este es el test de Shapiro. La hipótesis nula es que los datos siguen una distribución normal, entonces, si p<0.05, se acepta la hipótesis alternativa -no es una distribución normal. 
+
+```{r}
+
+shapiro.test(datos$tam)
+
+```
+
+Si hay más de dos grupos entonces se utiliza el análisis de la varianza. Es un test paramétrico, así que hay que fijarnos en la distribución.
+
+```{r}
+
+summary(aov(tam ~ grado, data = datos))
+
+```
+
+Si tenemos más de dos categorías y no sigue una distribución normal, entonces hay que realizar un test no paramétrico de más de dos etiquetas llamado test de Kruskal-Wallis. 
+
+```{r}
+
+kruskal.test(tam ~ grado, data = datos)
+
+```
+#### Numérica con numérica
+
+Si sigue una distribución normal se utiliza el **coeficiente de correlación de Pearson**. 
+
+Si no sigue una distribución normal se utiliza el **coeficiente de correlación de Spearman**. 
+
+
+
+
+
+
+
