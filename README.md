@@ -1,6 +1,6 @@
 # Apuntes de Minería de Datos
 
-Este repositorio está dedicado a almacenar y compartir mis apuntes de la asignatura de Minería de Datos de mi paso por el grado en Ingeniería de la Salud con mención en Bioinformática. Este repositorio será administrado usando Git. 
+Este repositorio está dedicado a almacenar y compartir mis apuntes de la asignatura "Minería de Datos", cursada durante mi grado en Ingeniería de la Salud con mención en Bioinformática. Este repositorio será administrado usando Git. 
 
 <p align="center">
   <img src="https://github.com/MarioPasc/Mineria-de-Datos-con-R/assets/120520768/8116be8d-7c0d-4564-9678-d1fda0064a6a" width="100" title="Universidad de Málaga">
