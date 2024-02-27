@@ -225,6 +225,8 @@ source("~/Proyectos R/Mineria-de-Datos-con-R/calculaPValor.R")
 
 resultados <- aplicaCalculaPValorATodosLosPares(datos)
 
+
+
 library(ggplot2)
 library(reshape2)
 
@@ -239,7 +241,9 @@ ggplot(resultados, aes(x = VariableX, y = VariableY, fill = Valor)) +
 
 ```
 
-
+```{r}
+resultados
+```
 
 
 

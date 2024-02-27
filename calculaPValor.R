@@ -49,12 +49,12 @@ calculaPValor <- function(datos, var1, var2) {
       if (any(tabla.contingencia) < 5) { # Si hay al menos una variable que tiene <5
         
         fish.test <- fisher.test(tabla.contingencia, simulate.p.value=TRUE)
-        return(fish.test$p.value)
+        return(list(fish.test$p.value, "Fisher test"))
         
       } else { # Ambas variables tienen más de 5 valores por clase
         
         chi.test <- chisq.test(tabla.contingencia, simulate.p.value=TRUE)
-        return(chi.test$p.value)
+        return(list(chi.test$p.value, "ChiSQ test"))
         
       }
       
@@ -69,11 +69,12 @@ calculaPValor <- function(datos, var1, var2) {
       shapiro.test(datos[[var1]])$p.value > 0.05 &&
       shapiro.test(datos[[var2]])$p.value > 0.05
     ) {
-      print("PEARSON")
-      return(cor.test(datos[[var1]], datos[[var2]], method = "pearson")$p.value)
+      return(list(cor.test(datos[[var1]], datos[[var2]], method = "pearson")$p.value,
+                  "Pearson test"))
     } else {
       print("SPEARMAN")
-      return(cor.test(datos[[var1]], datos[[var2]], method = "spearman")$p.value)
+      return(list(cor.test(datos[[var1]], datos[[var2]], method = "spearman")$p.value,
+                  "Spearman test"))
     }
     
   } else { # Una de las dos es numérica
@@ -95,15 +96,13 @@ calculaPValor <- function(datos, var1, var2) {
         # Más de 2 tipos, distribución normal -> AOV
         aov.test <- summary(aov(formula = as.formula(formula.text), 
                                 data = datos))
-        print("AOV")
-        return(aov.test[[1]][["Pr(>F)"]][1])
+        return(list(aov.test[[1]][["Pr(>F)"]][1], "AOV test"))
         
       } else {
         # Más de dos datos, distribución diferente -> Kruskal
         kruskal.test <- kruskal.test(formula = as.formula(formula.text), 
                                     data = datos)
-        print("KURSKAL")
-        return(kruskal.test$p.value)
+        return(list(kruskal.test$p.value, "Kurskal test"))
       }
     } else {
       
@@ -111,14 +110,12 @@ calculaPValor <- function(datos, var1, var2) {
         # 2 tipos, distribucion normal -> t test
         ttest.test <- t.test(formula = as.formula(formula.text), 
                              data = datos)
-        print("TTEST")
-        return(ttest.test$p.value)
+        return(list(ttest.test$p.value, "T test"))
       } else {
         # 2 tipos, distribucion diferente -> Wilcoxon test
         wilcoxon.test <- wilcox.test(formula = as.formula(formula.text),
                                      data = datos)
-        print("WILCOXON")
-        return(wilcoxon.test$p.value)
+        return(list(wilcoxon.test$p.value, "Wilcoxon test"))
       }
     }
   }
@@ -130,6 +127,7 @@ aplicaCalculaPValorATodosLosPares <- function(datos) {
   
   # Inicializa un vector para almacenar los resultados
   resultados_p_valores <- numeric(0) # Vector vacío
+  test_types <- character(0)
   variable_1 <- character(0) 
   variable_2 <- character(0)
   
@@ -141,10 +139,13 @@ aplicaCalculaPValorATodosLosPares <- function(datos) {
       var2 <- nombres_variables[j]
       
       # Llama a calculaPValor para el par de variables actual
-      resultado <- calculaPValor(datos, var1, var2)
+      resultado_completo <- calculaPValor(datos, var1, var2)
+      resultado <- resultado_completo[[1]]
+      test_type <- resultado_completo[[2]]
       
       # Almacena el resultado p en el vector
       resultados_p_valores <- c(resultados_p_valores, resultado)
+      test_types <- c(test_types, test_type)
       
       # Guarda el nombre del par de variables
       variable_1 <- c(variable_1, paste(var1))
@@ -154,7 +155,7 @@ aplicaCalculaPValorATodosLosPares <- function(datos) {
   }
   
   resultados_df <- data.frame(VariableX = variable_1, VariableY = variable_2, 
-                              Valor = resultados_p_valores)
+                              Valor = resultados_p_valores, Test = test_types)
   return(resultados_df)
 }
 
