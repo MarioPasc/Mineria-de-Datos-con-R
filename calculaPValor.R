@@ -16,17 +16,11 @@
 # Distribución normal: correlación de Pearson
 # Distribución diferente: correlación de Spearman
 
-variables.categoricas <- function(datos) {
-  return(
-    colnames(datos)[sapply(datos, function(columna) {
-      !is.numeric(columna)
-      })]
-  )
-}
 
 calculaPValor <- function(datos, var1, var2) {
   # Calculamos las variables categóricas del dataset
-  varCat <- variables.categoricas(datos)
+  varNum <- colnames(datos)[sapply(datos, is.numeric)]
+  varCat <- colnames(datos)[!colnames(datos) %in% varNum]
   
   # Comprobamos los tipos de variables que son var1 y var2
   var1.cat <- var1 %in% varCat
@@ -83,28 +77,15 @@ calculaPValor <- function(datos, var1, var2) {
     if (var1.cat) {
       numerica <- var2
       categorica <- var1
+      formula.text <- paste(var2, "~", var1, sep = " ")
     } else {
       numerica <- var1
       categorica <- var2
+      formula.text <- paste(var1, "~", var2, sep = " ")
     }
+  
     
-    formula.text <- paste(var1, "~", var2, sep = " ")
-    
-    if (length(unique(datos[[categorica]])) > 2) {
-      
-      if (shapiro.test(datos[[numerica]])$p.value > 0.05) {
-        # Más de 2 tipos, distribución normal -> AOV
-        aov.test <- summary(aov(formula = as.formula(formula.text), 
-                                data = datos))
-        return(list(aov.test[[1]][["Pr(>F)"]][1], "AOV test"))
-        
-      } else {
-        # Más de dos datos, distribución diferente -> Kruskal
-        kruskal.test <- kruskal.test(formula = as.formula(formula.text), 
-                                    data = datos)
-        return(list(kruskal.test$p.value, "Kurskal test"))
-      }
-    } else {
+    if (length(unique(na.omit(datos[[categorica]]))) == 2) {
       
       if (shapiro.test(datos[[numerica]])$p.value > 0.05) {
         # 2 tipos, distribucion normal -> t test
@@ -117,9 +98,28 @@ calculaPValor <- function(datos, var1, var2) {
                                      data = datos)
         return(list(wilcoxon.test$p.value, "Wilcoxon test"))
       }
+      
+    } else {
+      
+      if (shapiro.test(datos[[numerica]])$p.value > 0.05) {
+        # Más de 2 tipos, distribución normal -> AOV
+        aov.test <- summary(aov(formula = as.formula(formula.text), 
+                                data = datos))
+        return(list(aov.test[[1]][["Pr(>F)"]][1], "AOV test"))
+        
+      } else {
+        # Más de dos datos, distribución diferente -> Kruskal
+        kruskal.test <- kruskal.test(formula = as.formula(formula.text), 
+                                     data = datos)
+        return(list(kruskal.test$p.value, "Kurskal test"))
+      }
+      
     }
   }
 }
+
+
+
 
 aplicaCalculaPValorATodosLosPares <- function(datos) {
   # Obtén todos los nombres de las variables del dataset
